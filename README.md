@@ -12,7 +12,7 @@ A Python library for generating hexagonal tessellations.
 To use this library, simply install it using pip:
 
 ```bash
-pip install cayleygraph
+pip install hexalate
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ pip install cayleygraph
 Import the `hexalate` module:
 
 ```python
-import cayleygraph as cg
+import hexalate as hx
 ```
 
 Create a tessellation with the desired width, height, and hexagon size:
@@ -31,7 +31,7 @@ Create a tessellation with the desired width, height, and hexagon size:
 width = 10
 height = 5
 size = 0.3
-tessellation = cg.create_hexagonal_tessellation(width, height, size)
+tessellation = hx.create_hexagonal_tessellation(width, height, size)
 ```
 
 Visualize the tessellation using your favorite plotting library (e.g., Matplotlib):
@@ -54,14 +54,14 @@ Customize the hexagon shape and size:
 
 ```python
 
-hexagon = cg.hexagon(center=(1, 2), size=0.5)
+hexagon = hx.hexagon(center=(1, 2), size=0.5)
 ```
 
 Generate a tessellation with a specific density:
 
 ```python
 density = 0.8
-tessellation = cg.create_hexagonal_tessellation(width, height, size, density=density)
+tessellation = hx.create_hexagonal_tessellation(width, height, size, density=density)
 ```
 
 ### Acknowledgments
