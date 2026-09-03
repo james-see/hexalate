@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hexalate-mcp"
+version = "0.1.1"
+description = "MCP server for hexalate — hexagonal tessellation tools for AI assistants"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "James Campbell", email = "james@jamescampbell.us" }]
+keywords = ["hexagon", "tessellation", "mcp", "model-context-protocol", "hex-grid"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "hexalate>=0.3.0",
+    "mcp[cli]>=1.0.0",
+    "uvicorn>=0.30.0",
+    "starlette>=0.40.0",
+    "h11>=0.14.0",
+]
+
+[project.urls]
+Homepage   = "https://james-see.github.io/hexalate/"
+Repository = "https://github.com/james-see/hexalate"
+PyPI       = "https://pypi.org/project/hexalate-mcp/"
+
+[project.scripts]
+hexalate-mcp = "hexalate_mcp.server:main"

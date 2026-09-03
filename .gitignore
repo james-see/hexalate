@@ -10,6 +10,7 @@ docs/generate_hero.py
 
 build/
 dist/
+mcp/dist/
 
 *.egg-info
 *.egg
