@@ -5,6 +5,9 @@
 examples/*.png
 examples/*.geojson
 
+# Generated docs assets (hero is committed, generator is not run on CI)
+docs/generate_hero.py
+
 build/
 dist/
 

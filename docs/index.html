@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hexalate — hexagonal tessellation for Python</title>
+  <meta name="description" content="A Python library for generating hexagonal tessellations with axial coordinates, colormap plotting, GeoJSON export, and more." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0a1520;
+      --bg2:    #0f1e2e;
+      --accent: #e8d88a;
+      --muted:  #8ab0c8;
+      --text:   #d0dde8;
+      --code:   #1a2f45;
+      --border: #1e3450;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.7;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+    }
+    .hero img {
+      width: 100%;
+      display: block;
+      max-height: 520px;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    /* Nav */
+    nav {
+      background: rgba(10, 21, 32, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    nav .logo { color: var(--accent); font-family: monospace; font-size: 1.2rem; font-weight: bold; text-decoration: none; }
+    nav .links { display: flex; gap: 1.5rem; }
+    nav .links a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+    nav .links a:hover { color: var(--accent); }
+
+    /* Main layout */
+    main { max-width: 900px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    h2 { color: var(--accent); font-family: monospace; font-size: 1.4rem; margin: 2.5rem 0 1rem; }
+    h3 { color: var(--muted); font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+    p  { margin-bottom: 1rem; }
+
+    /* Install badge */
+    .install {
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      font-family: monospace;
+      font-size: 1.1rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .install span { color: var(--muted); font-size: 0.85rem; }
+
+    /* Code blocks */
+    pre {
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    code { font-family: 'Cascadia Code', 'Fira Code', monospace; color: #a8d8f0; }
+    pre code { color: var(--text); }
+    .kw  { color: #c792ea; }
+    .fn  { color: #82aaff; }
+    .str { color: #c3e88d; }
+    .cm  { color: #546e7a; font-style: italic; }
+    .num { color: #f78c6c; }
+
+    /* Feature grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .feature {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+    }
+    .feature .icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+    .feature h4 { color: var(--accent); font-family: monospace; margin-bottom: 0.3rem; }
+    .feature p  { font-size: 0.88rem; color: var(--muted); margin: 0; }
+
+    /* Examples table */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th { text-align: left; color: var(--muted); padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); font-weight: normal; }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
+    td:first-child { font-family: monospace; color: #82aaff; }
+    tr:last-child td { border-bottom: none; }
+
+    /* Buttons */
+    .buttons { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0; }
+    .btn {
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary { background: var(--accent); color: var(--bg); font-weight: bold; }
+    .btn-outline { border: 1px solid var(--border); color: var(--muted); }
+
+    footer { text-align: center; color: var(--border); font-size: 0.8rem; padding: 2rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#">hexalate</a>
+  <div class="links">
+    <a href="https://pypi.org/project/hexalate/" target="_blank">PyPI</a>
+    <a href="https://github.com/james-see/hexalate" target="_blank">GitHub</a>
+    <a href="https://github.com/james-see/hexalate/tree/main/examples" target="_blank">Examples</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <img src="hero.png" alt="hexalate — a Civ-style hex world map generated with hexalate itself" />
+</div>
+
+<main>
+
+  <div class="install">
+    <code>pip install hexalate</code>
+    <span>Python 3.8+  ·  MIT License</span>
+  </div>
+
+  <div class="buttons">
+    <a class="btn btn-primary" href="https://github.com/james-see/hexalate" target="_blank">View on GitHub</a>
+    <a class="btn btn-outline" href="https://pypi.org/project/hexalate/" target="_blank">PyPI v0.3.0</a>
+    <a class="btn btn-outline" href="https://github.com/james-see/hexalate/tree/main/examples" target="_blank">Examples →</a>
+  </div>
+
+  <p>
+    <strong>hexalate</strong> is a Python library for generating hexagonal tessellations.
+    It gives you flat-top or pointy-top hex grids with axial coordinates, neighbor lookups,
+    colormap heatmaps, GeoJSON and DataFrame export, and a ready-to-use CLI.
+    The hero image above was generated with hexalate itself.
+  </p>
+
+  <div class="features">
+    <div class="feature"><div class="icon">⬡</div><h4>HexGrid class</h4><p>Create and iterate grids. Flat-top or pointy-top orientation.</p></div>
+    <div class="feature"><div class="icon">🗺</div><h4>Axial coords</h4><p>Every hex has q, r, s cube coordinates, distance, and neighbor lookups.</p></div>
+    <div class="feature"><div class="icon">🎨</div><h4>Colormap heatmaps</h4><p>Pass a values list and any matplotlib colormap to visualise data.</p></div>
+    <div class="feature"><div class="icon">📊</div><h4>DataFrame export</h4><p>to_dataframe() returns a pandas DataFrame — filter, join, analyse.</p></div>
+    <div class="feature"><div class="icon">🌍</div><h4>GeoJSON export</h4><p>to_geojson() / save_geojson() — open in QGIS, kepler.gl, or Mapbox.</p></div>
+    <div class="feature"><div class="icon">💾</div><h4>Save to file</h4><p>save_to_file("grid.png") — PNG, SVG, PDF at any DPI.</p></div>
+  </div>
+
+  <h2>Quick start</h2>
+
+<pre><code><span class="kw">import</span> hexalate <span class="kw">as</span> hx
+
+<span class="cm"># Create a grid and plot it</span>
+grid = hx.<span class="fn">HexGrid</span>(width=<span class="num">10</span>, height=<span class="num">8</span>, hex_size=<span class="num">0.5</span>)
+grid.<span class="fn">plot</span>()
+
+<span class="cm"># Flat-top orientation</span>
+grid = hx.<span class="fn">HexGrid</span>(<span class="num">10</span>, <span class="num">8</span>, <span class="num">0.5</span>, orientation=<span class="str">"flat"</span>)
+
+<span class="cm"># Color by data</span>
+values = [h.q + h.r <span class="kw">for</span> h <span class="kw">in</span> grid]
+grid.<span class="fn">plot</span>(values=values, colormap=<span class="str">"plasma"</span>, output=<span class="str">"heatmap.png"</span>)</code></pre>
+
+  <h2>Axial coordinates & navigation</h2>
+
+<pre><code><span class="cm"># Access a hex by axial coords</span>
+h = grid.<span class="fn">get</span>(q=<span class="num">2</span>, r=<span class="num">3</span>)
+
+<span class="cm"># Cube-coordinate distance</span>
+center = grid.<span class="fn">get</span>(<span class="num">0</span>, <span class="num">0</span>)
+h.<span class="fn">distance_to</span>(center)   <span class="cm"># → int</span>
+
+<span class="cm"># All 6 existing neighbors</span>
+grid.<span class="fn">neighbors</span>(<span class="num">2</span>, <span class="num">3</span>)      <span class="cm"># → list[Hexagon]</span></code></pre>
+
+  <h2>Export</h2>
+
+<pre><code><span class="cm"># Pandas DataFrame  (pip install pandas)</span>
+df = grid.<span class="fn">to_dataframe</span>()       <span class="cm"># columns: x, y, q, r</span>
+
+<span class="cm"># GeoJSON — open in QGIS, kepler.gl, geojson.io</span>
+grid.<span class="fn">save_geojson</span>(<span class="str">"grid.geojson"</span>)
+
+<span class="cm"># Save plot</span>
+grid.<span class="fn">save_to_file</span>(<span class="str">"grid.svg"</span>, dpi=<span class="num">300</span>)</code></pre>
+
+  <h2>CLI</h2>
+
+<pre><code><span class="cm"># Display a grid</span>
+hexalate --width <span class="num">10</span> --height <span class="num">8</span> --size <span class="num">0.5</span>
+
+<span class="cm"># Flat-top + colormap + save to file</span>
+hexalate --width <span class="num">12</span> --height <span class="num">10</span> --size <span class="num">0.6</span> \
+         --orientation flat --colormap plasma --output grid.png</code></pre>
+
+  <h2>Examples</h2>
+
+  <table>
+    <tr><th>File</th><th>What it shows</th></tr>
+    <tr><td>distance_rings.py</td><td>Concentric rings by cube-distance from center</td></tr>
+    <tr><td>wave_heatmap.py</td><td>sin × cos function mapped over the grid</td></tr>
+    <tr><td>game_board.py</td><td>Catan-style island board with terrain types</td></tr>
+    <tr><td>checkerboard.py</td><td>Perfect 3-coloring via q mod 3</td></tr>
+    <tr><td>geojson_export.py</td><td>Full grid + filtered zone to GeoJSON</td></tr>
+    <tr><td>dataframe_analysis.py</td><td>Pandas filter, custom metrics, re-plot</td></tr>
+  </table>
+
+</main>
+
+<footer>hexalate · MIT License · <a href="https://github.com/james-see/hexalate" style="color:inherit">github.com/james-see/hexalate</a></footer>
+
+</body>
+</html>
