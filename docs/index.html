@@ -265,6 +265,29 @@ hexalate --width <span class="num">10</span> --height <span class="num">8</span>
 hexalate --width <span class="num">12</span> --height <span class="num">10</span> --size <span class="num">0.6</span> \
          --orientation flat --colormap plasma --output grid.png</code></pre>
 
+  <h2>MCP Server — use hexalate from AI assistants</h2>
+
+  <p>hexalate ships an <a href="https://modelcontextprotocol.io">MCP</a> server so you can call it directly from Cursor, Claude Desktop, or any MCP-compatible AI tool.</p>
+
+  <h3>Remote (no install) — <code>hexalate.fly.dev</code></h3>
+<pre><code><span class="cm"># Cursor / Claude Desktop — add to your mcp.json</span>
+{
+  <span class="str">"hexalate"</span>: {
+    <span class="str">"url"</span>: <span class="str">"https://hexalate.fly.dev/mcp"</span>
+  }
+}</code></pre>
+
+  <h3>Local (via uvx — no install needed)</h3>
+<pre><code>{
+  <span class="str">"hexalate"</span>: {
+    <span class="str">"command"</span>: <span class="str">"uvx"</span>,
+    <span class="str">"args"</span>: [<span class="str">"hexalate-mcp"</span>]
+  }
+}</code></pre>
+
+  <h3>Browser playground</h3>
+  <p><a href="playground.html">Try hexalate in your browser</a> — no install, powered by Pyodide.</p>
+
   <h2>Examples</h2>
 
   <table>
