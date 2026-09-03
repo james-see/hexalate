@@ -25,48 +25,52 @@ Import the `hexalate` module:
 import hexalate as hx
 ```
 
-Create a tessellation with the desired width, height, and hexagon size:
+Create and visualize a tessellation with the desired width, height, and hexagon size:
 
 ```python
-width = 10
-height = 5
-size = 0.3
-tessellation = hx.create_hexagonal_tessellation(width, height, size)
+tessellation = hx.create_hexagonal_tessellation(width=10, height=5, hex_size=0.5)
+hx.plot_hexagonal_tessellation(tessellation)
 ```
 
-Visualize the tessellation using your favorite plotting library (e.g., Matplotlib):
+### Generate Hexagon Coordinates
+
+Get the vertices of a single hexagon centered at `(x, y)` with a given radius:
 
 ```python
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(width, height))
-for hexagon in tessellation:
-    x, y = hexagon['x'], hexagon['y']
-    plt.plot([x, x+size*np.sqrt(3)], [y, y+size/2], 'k-')
-    plt.plot([x, x+size*np.sqrt(3)/2], [y-size/4, y+size/4], 'k-')
-    plt.plot([x, x-size*np.sqrt(3)/2], [y-size/4, y+size/4], 'k-')
-plt.show()
+vertices = hx.hexagon(x_center=1.0, y_center=2.0, size=0.5)
 ```
+
+Returns a list of `(x, y)` tuples for the 7 vertices (closed polygon).
 
 ### Advanced Usage
 
-Customize the hexagon shape and size:
+Access the raw tessellation data to integrate with your own plotting library:
 
 ```python
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
-hexagon = hx.hexagon(center=(1, 2), size=0.5)
+tessellation = hx.create_hexagonal_tessellation(width=10, height=8, hex_size=0.6)
+
+fig, ax = plt.subplots(figsize=(10, 8))
+for hex_data in tessellation:
+    ax.add_patch(patches.Polygon(hex_data['coords'], edgecolor='black', facecolor='lightblue'))
+ax.autoscale_view()
+ax.set_aspect('equal')
+plt.axis('off')
+plt.show()
 ```
 
-Generate a tessellation with a specific density:
+Each element in the tessellation list is a dict with keys:
+- `x` — center x coordinate
+- `y` — center y coordinate
+- `coords` — list of `(x, y)` vertex tuples
 
-```python
-density = 0.8
-tessellation = hx.create_hexagonal_tessellation(width, height, size, density=density)
+### Command Line
+
+```bash
+hexalate --width 10 --height 8 --size 0.5
 ```
-
-### Acknowledgments
-
-This library is based on the work of Cayley, a mathematician who developed the concept of Cayley graphs. Special thanks to MATLAB for inspiring the naming conventions and syntax.
 
 ### License
 
