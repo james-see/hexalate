@@ -1,6 +1,10 @@
 
 .DS_Store
 
+# Generated example outputs
+examples/*.png
+examples/*.geojson
+
 build/
 dist/
 

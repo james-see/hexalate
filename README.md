@@ -129,6 +129,29 @@ vertices = hx.hexagon(x_center=0.0, y_center=0.0, size=1.0, orientation="flat")
 
 Returns a list of 7 `(x, y)` tuples (closed polygon).
 
+## Examples
+
+Ready-to-run recipes in the [`examples/`](examples/) folder:
+
+| File | What it shows |
+|------|---------------|
+| [`distance_rings.py`](examples/distance_rings.py) | Concentric color rings radiating from the center hex using cube-distance |
+| [`wave_heatmap.py`](examples/wave_heatmap.py) | sin × cos function mapped over the grid — drop in any real data |
+| [`game_board.py`](examples/game_board.py) | Catan-style island board with terrain types and a flat-top orientation |
+| [`checkerboard.py`](examples/checkerboard.py) | 3-color tiling via axial coords (`q mod 3`) — no adjacency checks needed |
+| [`geojson_export.py`](examples/geojson_export.py) | Export full grid + distance-filtered zone to GeoJSON for QGIS / kepler.gl |
+| [`dataframe_analysis.py`](examples/dataframe_analysis.py) | Attach custom metrics in pandas, filter to inner rings, re-plot the subset |
+
+```bash
+cd examples
+python distance_rings.py     # → distance_rings.png
+python wave_heatmap.py       # → wave_heatmap.png
+python game_board.py         # → game_board.png
+python checkerboard.py       # → checkerboard.png
+python geojson_export.py     # → full_grid.geojson, center_zone.geojson
+python dataframe_analysis.py # → dataframe_analysis.png (requires pandas)
+```
+
 ## Command Line
 
 ```bash
