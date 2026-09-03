@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name='hexalate',
-    version='0.2.1',
+    version='0.3.0',
     description='A package for generating hexagonal tessellations',
     long_description=long_description,
     long_description_content_type='text/markdown',
