@@ -1,0 +1,54 @@
+# hexalate
+
+> A Python library for generating hexagonal tessellations with axial coordinates, colormap heatmaps, GeoJSON and DataFrame export, and a CLI.
+
+## Links
+
+- Homepage: https://james-see.github.io/hexalate/
+- GitHub: https://github.com/james-see/hexalate
+- PyPI: https://pypi.org/project/hexalate/
+- Full API reference for LLMs: https://james-see.github.io/hexalate/llms-full.txt
+
+## Install
+
+```
+pip install hexalate
+```
+
+## What it does
+
+hexalate generates flat-top or pointy-top hexagonal grids that fill a rectangular area. Every hexagon carries axial (q, r) and cube (q, r, s) coordinates so you can do neighbor lookups, distance calculations, and pathfinding without any extra libraries. The grid can be plotted with matplotlib (including colormap-driven heatmaps), exported to a pandas DataFrame, or saved as a GeoJSON FeatureCollection.
+
+## Core API
+
+- `HexGrid(width, height, hex_size, orientation="pointy")` — main class
+- `HexGrid.get(q, r)` — return `Hexagon` at axial coords, or `None`
+- `HexGrid.neighbors(q, r)` — list of existing neighbor `Hexagon` objects
+- `HexGrid.plot(values, colormap, output, ...)` — matplotlib plot, optional colormap
+- `HexGrid.to_dataframe()` — pandas DataFrame with columns x, y, q, r
+- `HexGrid.to_geojson()` — GeoJSON FeatureCollection dict
+- `HexGrid.save_geojson(path)` — write GeoJSON to file
+- `HexGrid.save_to_file(path, dpi)` — save plot image
+- `hexagon(x, y, size, orientation)` — vertices of a single hex
+- `create_hexagonal_tessellation(width, height, hex_size)` — legacy list-of-dicts API
+- `plot_hexagonal_tessellation(tessellation, ...)` — legacy plot function
+
+## Hexagon dataclass
+
+Each `Hexagon` has: `x`, `y` (Cartesian center), `q`, `r` (axial), `s` (cube, always -q-r), `coords` (7 vertex tuples), `distance_to(other)`, `neighbor_coords()`.
+
+## CLI
+
+```
+hexalate --width 10 --height 8 --size 0.5 [--orientation flat] [--colormap viridis] [--output grid.png]
+```
+
+## Examples
+
+Six ready-to-run scripts in examples/:
+- distance_rings.py — concentric color rings by cube distance
+- wave_heatmap.py — mathematical function mapped over the grid
+- game_board.py — Catan-style terrain map, flat-top, custom patches
+- checkerboard.py — 3-color tiling via q mod 3
+- geojson_export.py — save full grid and a filtered zone to GeoJSON
+- dataframe_analysis.py — pandas metrics, filter to inner rings, re-plot

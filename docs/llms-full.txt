@@ -1,0 +1,343 @@
+# hexalate — Full API Reference
+
+> Version: 0.3.0 | License: MIT | Python: 3.8+
+> PyPI: https://pypi.org/project/hexalate/
+> GitHub: https://github.com/james-see/hexalate
+> Homepage: https://james-see.github.io/hexalate/
+
+## Installation
+
+```
+pip install hexalate
+```
+
+Optional extras:
+```
+pip install pandas    # for HexGrid.to_dataframe()
+```
+
+---
+
+## HexGrid class
+
+The primary interface. Creates a hexagonal grid filling a rectangular area.
+
+```python
+import hexalate as hx
+
+grid = hx.HexGrid(
+    width=10,           # float — width of the area to fill
+    height=8,           # float — height of the area to fill
+    hex_size=0.5,       # float — circumradius of each hexagon
+    orientation="pointy"  # "pointy" (default) or "flat"
+)
+```
+
+### Orientation
+
+- `"pointy"` — pointy-top hexagons, rows offset (default, like most hex maps)
+- `"flat"` — flat-top hexagons, columns offset (common in strategy games)
+
+### Iteration and length
+
+```python
+len(grid)          # number of hexagons
+for h in grid:     # iterate over Hexagon objects
+    print(h.x, h.y, h.q, h.r)
+```
+
+### HexGrid.get(q, r)
+
+Return the `Hexagon` at axial coordinates (q, r), or `None` if out of bounds.
+
+```python
+h = grid.get(2, 3)   # → Hexagon or None
+```
+
+### HexGrid.neighbors(q, r)
+
+Return a list of all existing `Hexagon` objects adjacent to the hex at (q, r).
+Returns up to 6 hexagons; fewer at grid edges.
+
+```python
+grid.neighbors(0, 0)   # → list[Hexagon]
+```
+
+### HexGrid.plot(...)
+
+Plot the tessellation with matplotlib.
+
+```python
+grid.plot(
+    values=None,           # list[float] | None — per-hex values for colormap
+    colormap="viridis",    # str — any matplotlib colormap name
+    edge_color="black",    # str — hex border color; use "none" to hide
+    face_color="lightblue",# str — uniform fill when values is None
+    figsize=(10, 8),       # tuple[float, float] — figure size in inches
+    output=None,           # str | None — file path to save (.png .svg .pdf)
+    dpi=150,               # int — resolution when saving
+)
+```
+
+When `values` is provided, a colorbar is added automatically.
+
+### HexGrid.save_to_file(path, dpi=150, **kwargs)
+
+Convenience wrapper around `plot(output=path, ...)`.
+
+```python
+grid.save_to_file("grid.png", dpi=200)
+grid.save_to_file("heatmap.svg", values=my_values, colormap="plasma")
+```
+
+### HexGrid.to_dataframe()
+
+Return a pandas DataFrame with columns `x`, `y`, `q`, `r`.
+Requires `pandas` (`pip install pandas`).
+
+```python
+df = grid.to_dataframe()
+df["dist"] = (df["x"]**2 + df["y"]**2) ** 0.5
+inner = df[df["dist"] < 5]
+```
+
+### HexGrid.to_geojson()
+
+Return a GeoJSON FeatureCollection dict. Each feature has:
+- `geometry.type`: `"Polygon"`
+- `geometry.coordinates`: list of [x, y] pairs
+- `properties`: `{q, r, x, y}`
+
+```python
+geojson = grid.to_geojson()
+```
+
+Compatible with QGIS, kepler.gl, Mapbox, Leaflet, geojson.io.
+
+### HexGrid.save_geojson(path)
+
+Write the GeoJSON FeatureCollection to a file.
+
+```python
+grid.save_geojson("grid.geojson")
+```
+
+### HexGrid.to_list()
+
+Return backward-compatible list of dicts with keys `x`, `y`, `q`, `r`, `coords`.
+
+---
+
+## Hexagon dataclass
+
+Every hex in a `HexGrid` is a `Hexagon` instance.
+
+### Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `x` | float | Cartesian center x |
+| `y` | float | Cartesian center y |
+| `q` | int | Axial column coordinate |
+| `r` | int | Axial row coordinate |
+| `s` | int (property) | Cube coordinate, always `-q - r` |
+| `coords` | list[tuple[float,float]] | 7 vertex (x,y) tuples — closed polygon |
+
+### Hexagon.distance_to(other)
+
+Return the cube-coordinate (hex) distance between this hex and another.
+Equivalent to: `max(|q1-q2|, |r1-r2|, |s1-s2|)`
+
+```python
+a = grid.get(0, 0)
+b = grid.get(3, 2)
+a.distance_to(b)   # → int
+```
+
+### Hexagon.neighbor_coords()
+
+Return the axial (q, r) coordinates of all 6 theoretical neighbors
+(regardless of whether they exist in the grid).
+
+```python
+h.neighbor_coords()
+# → [(q+1,r), (q+1,r-1), (q,r-1), (q-1,r), (q-1,r+1), (q,r+1)]
+```
+
+Use `grid.neighbors(q, r)` to get only existing hexagons.
+
+---
+
+## hexagon() function
+
+Generate the 7 vertices of a single hexagon as a closed polygon.
+
+```python
+vertices = hx.hexagon(
+    x_center=0.0,
+    y_center=0.0,
+    size=1.0,
+    orientation="pointy"  # or "flat"
+)
+# → list[tuple[float, float]]  — 7 (x, y) tuples
+```
+
+---
+
+## Backward-compatible functions
+
+These match the original v0.1/v0.2 API and remain fully supported.
+
+### create_hexagonal_tessellation(width, height, hex_size, orientation="pointy")
+
+Returns a list of dicts. Each dict has keys: `x`, `y`, `q`, `r`, `coords`.
+(`q` and `r` were not present in v0.1/v0.2 — they are additive, non-breaking.)
+
+```python
+tessellation = hx.create_hexagonal_tessellation(10, 8, 0.5)
+tessellation = hx.create_hexagonal_tessellation(10, 8, 0.5, orientation="flat")
+```
+
+### plot_hexagonal_tessellation(tessellation, colormap=None, values=None, output=None)
+
+Plot a list-of-dicts tessellation.
+
+```python
+hx.plot_hexagonal_tessellation(tessellation)
+hx.plot_hexagonal_tessellation(tessellation, colormap="plasma", values=my_values)
+hx.plot_hexagonal_tessellation(tessellation, output="grid.png")
+```
+
+---
+
+## CLI reference
+
+```
+hexalate [OPTIONS]
+
+Required:
+  --width   FLOAT   Width of the tessellation area
+  --height  FLOAT   Height of the tessellation area
+  --size    FLOAT   Circumradius of each hexagon
+
+Optional:
+  --orientation {pointy,flat}   Hex orientation (default: pointy)
+  --colormap  STR               Matplotlib colormap for random coloring
+                                (e.g. viridis, plasma, coolwarm, RdYlBu)
+  --output    PATH              Save to file instead of displaying
+                                (supports .png .svg .pdf)
+```
+
+Examples:
+```
+hexalate --width 10 --height 8 --size 0.5
+hexalate --width 12 --height 10 --size 0.6 --orientation flat
+hexalate --width 10 --height 8 --size 0.5 --colormap plasma --output heatmap.png
+```
+
+---
+
+## Coordinate system
+
+hexalate uses the **axial coordinate system** (also called "trapezoidal") which
+is a projection of cube coordinates where `s = -q - r`.
+
+Axial directions (the 6 neighbors of any hex at origin):
+```
+(+1,  0), (+1, -1), ( 0, -1)
+(-1,  0), (-1, +1), ( 0, +1)
+```
+
+Hex distance formula: `max(|Δq|, |Δr|, |Δq+Δr|)`
+
+The grid uses offset coordinates internally (odd-r for pointy-top, odd-q for
+flat-top) and converts to axial at generation time. All public APIs expose
+axial coordinates only.
+
+---
+
+## Common patterns
+
+### Color by distance from center
+
+```python
+grid = hx.HexGrid(10, 8, 0.5)
+cx, cy = sum(h.x for h in grid)/len(grid), sum(h.y for h in grid)/len(grid)
+origin = min(grid, key=lambda h: (h.x-cx)**2 + (h.y-cy)**2)
+values = [origin.distance_to(h) for h in grid]
+grid.plot(values=values, colormap="coolwarm", output="rings.png")
+```
+
+### Mathematical heatmap
+
+```python
+import math
+grid = hx.HexGrid(12, 10, 0.5)
+values = [math.sin(h.x * 0.8) * math.cos(h.y * 0.8) for h in grid]
+grid.plot(values=values, colormap="RdYlBu", edge_color="none")
+```
+
+### Filter to inner ring via DataFrame
+
+```python
+df = grid.to_dataframe()
+cx, cy = df["x"].mean(), df["y"].mean()
+origin = grid.get(0, 0)  # or find programmatically
+df["ring"] = [origin.distance_to(grid.get(q, r)) for q, r in zip(df["q"], df["r"])]
+inner = df[df["ring"] <= 3]
+```
+
+### GeoJSON for mapping tools
+
+```python
+grid = hx.HexGrid(15, 12, 0.5)
+grid.save_geojson("grid.geojson")
+# → open in QGIS, kepler.gl, geojson.io, Mapbox, Leaflet
+```
+
+### Custom per-hex coloring (raw matplotlib)
+
+```python
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+fig, ax = plt.subplots(figsize=(10, 8))
+for h in grid:
+    color = my_color_function(h.q, h.r)
+    ax.add_patch(patches.Polygon(h.coords, facecolor=color, edgecolor="white"))
+ax.autoscale_view()
+ax.set_aspect("equal")
+ax.axis("off")
+plt.show()
+```
+
+---
+
+## Dependencies
+
+- `matplotlib` — plotting (required)
+- `numpy` — vertex math (required)
+- `pandas` — optional, for `to_dataframe()`
+
+---
+
+## Changelog
+
+### 0.3.0
+- `HexGrid` class with full axial coordinate system
+- `Hexagon` dataclass with `distance_to`, `neighbor_coords`, `s` property
+- Flat-top orientation support
+- Colormap heatmap support in `plot()` with automatic colorbar
+- `to_dataframe()`, `to_geojson()`, `save_geojson()`, `save_to_file()`
+- CLI flags: `--orientation`, `--colormap`, `--output`
+- Type hints throughout
+
+### 0.2.1
+- Fixed PyPI long description (README now shown on PyPI)
+
+### 0.2.0
+- Fixed blank `__init__.py` — `import hexalate as hx` now works correctly
+- Fixed README code examples to match actual API signatures
+
+### 0.1.0
+- Initial release: `hexagon()`, `create_hexagonal_tessellation()`, `plot_hexagonal_tessellation()`, CLI

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://james-see.github.io/hexalate/sitemap.xml
