@@ -28,17 +28,44 @@ import json
 import math
 import os
 import tempfile
+import uuid
+from collections import OrderedDict
 from typing import Any
+
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend — required for threaded/server use
 
 import hexalate as hx
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ImageContent, TextContent
 
+# ---------------------------------------------------------------------------
+# Ephemeral image store — serves PNGs via GET /images/{id}.png
+# Keeps at most 50 images in memory (LRU eviction)
+# ---------------------------------------------------------------------------
+_IMAGE_STORE: OrderedDict[str, bytes] = OrderedDict()
+_IMAGE_STORE_MAX = 50
+_SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "https://hexalate.fly.dev")
+
+
+def _store_image(data: bytes) -> str:
+    """Store PNG bytes, return a unique ID."""
+    img_id = uuid.uuid4().hex
+    _IMAGE_STORE[img_id] = data
+    if len(_IMAGE_STORE) > _IMAGE_STORE_MAX:
+        _IMAGE_STORE.popitem(last=False)
+    return img_id
+
+
+def get_image_bytes(img_id: str) -> bytes | None:
+    """Retrieve stored image bytes by ID (used by the HTTP endpoint)."""
+    return _IMAGE_STORE.get(img_id)
+
 mcp = MCPServer(
     name="hexalate",
     title="Hexalate",
     description="Hexagonal tessellation tools — create grids, query axial coordinates, export GeoJSON, plot heatmaps.",
-    version="0.1.3",
+    version="0.1.5",
     website_url="https://james-see.github.io/hexalate/",
 )
 
@@ -298,21 +325,25 @@ def plot_grid(
             f.write(img_bytes)
         written_path = os.path.abspath(dest_path)
 
-    # Detect image dimensions
+    # Store image server-side and build a fetchable URL
+    img_id = _store_image(img_bytes)
+    image_url = f"{_SERVER_BASE_URL}/images/{img_id}.png"
+
+    # Detect image dimensions from PNG header
+    import struct
     try:
-        import struct
-        # PNG width/height are at bytes 16-24
         w = struct.unpack(">I", img_bytes[16:20])[0]
         h = struct.unpack(">I", img_bytes[20:24])[0]
     except Exception:
         w = h = 0
 
-    meta = {
+    meta: dict[str, Any] = {
         "grid_name": grid_name,
+        "url": image_url,
+        "mime_type": "image/png",
         "size_bytes": len(img_bytes),
         "width": w,
         "height": h,
-        "mime_type": "image/png",
         "colormap": colormap,
         "color_by": color_by,
         "dpi": dpi,
@@ -334,20 +365,43 @@ def plot_grid(
 # ---------------------------------------------------------------------------
 
 def create_http_app():
-    """Return the streamable HTTP ASGI app (MCP 2.x, POST /mcp, Fly.io compatible)."""
+    """Return the ASGI app: MCP at POST /mcp + image serving at GET /images/{id}.png"""
     from mcp.server.transport_security import TransportSecuritySettings
+    from starlette.responses import Response
+    from starlette.types import ASGIApp, Receive, Scope, Send
 
     security = TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
         allowed_hosts=[
             "hexalate.fly.dev",
             "localhost",
-            "localhost:8080",
+            "localhost:*",
             "127.0.0.1",
-            "127.0.0.1:8080",
+            "127.0.0.1:*",
         ],
     )
-    return mcp.streamable_http_app(transport_security=security, host="0.0.0.0")
+    mcp_app = mcp.streamable_http_app(transport_security=security, host="0.0.0.0", stateless_http=True)
+
+    class App:
+        """Dispatches /images/* to the image store; everything else to the MCP app."""
+        def __init__(self, mcp: ASGIApp) -> None:
+            self._mcp = mcp
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["type"] == "http" and scope["path"].startswith("/images/"):
+                img_id = scope["path"].split("/images/", 1)[1].removesuffix(".png")
+                data = get_image_bytes(img_id)
+                if data is None:
+                    resp = Response("Image not found", status_code=404)
+                else:
+                    resp = Response(data, media_type="image/png", headers={
+                        "Cache-Control": "public, max-age=3600",
+                    })
+                await resp(scope, receive, send)
+            else:
+                await self._mcp(scope, receive, send)
+
+    return App(mcp_app)
 
 
 def create_sse_app():
