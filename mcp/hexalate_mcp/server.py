@@ -38,7 +38,7 @@ mcp = MCPServer(
     name="hexalate",
     title="Hexalate",
     description="Hexagonal tessellation tools — create grids, query axial coordinates, export GeoJSON, plot heatmaps.",
-    version="0.1.0",
+    version="0.1.2",
     website_url="https://james-see.github.io/hexalate/",
 )
 
