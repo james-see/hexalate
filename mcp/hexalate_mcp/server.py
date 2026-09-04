@@ -38,7 +38,7 @@ mcp = MCPServer(
     name="hexalate",
     title="Hexalate",
     description="Hexagonal tessellation tools — create grids, query axial coordinates, export GeoJSON, plot heatmaps.",
-    version="0.1.2",
+    version="0.1.3",
     website_url="https://james-see.github.io/hexalate/",
 )
 
@@ -238,16 +238,25 @@ def plot_grid(
     colormap: str = "viridis",
     color_by: str = "none",
     dpi: int = 150,
+    dest_path: str = "",
+    return_image: bool = True,
+    title: str = "",
 ) -> list[ImageContent | TextContent]:
     """
-    Plot a grid and return the image directly as base64-encoded PNG.
+    Plot a grid and return the PNG.
 
     Args:
         grid_name: Name of the grid (default: "default").
-        colormap: Matplotlib colormap (e.g. viridis, plasma, coolwarm, RdYlBu).
-        color_by: What to color hexes by — "none" (uniform), "distance" (from center),
-                  "q" (axial q coord), "r" (axial r coord), "wave" (sin*cos pattern).
+        colormap: Matplotlib colormap (viridis, plasma, coolwarm, RdYlBu, etc.).
+        color_by: "none" (uniform), "distance" (rings from center), "q", "r", "wave".
         dpi: Resolution (default 150).
+        dest_path: If provided, write the PNG to this absolute path on the caller's
+                   local filesystem (only works with local uvx transport, not remote).
+                   e.g. "/home/workdir/artifacts/grid.png". When written, the path is
+                   included in the JSON result so render_file / display tools can use it.
+        return_image: Return a base64 ImageContent block (default True). Set False for
+                      very large grids where the payload may be truncated by a gateway.
+        title: Optional title rendered on the plot.
     """
     grid = _require(grid_name)
 
@@ -256,8 +265,7 @@ def plot_grid(
         if color_by == "distance":
             xs = [h.x for h in grid]
             ys = [h.y for h in grid]
-            cx = sum(xs) / len(xs)
-            cy = sum(ys) / len(ys)
+            cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
             origin = min(grid, key=lambda h: (h.x - cx) ** 2 + (h.y - cy) ** 2)
             values = [origin.distance_to(h) for h in grid]
         elif color_by == "q":
@@ -273,18 +281,52 @@ def plot_grid(
         tmp_path = f.name
 
     try:
-        grid.plot(values=values, colormap=colormap, output=tmp_path, dpi=dpi)
+        plot_kwargs: dict[str, Any] = dict(values=values, colormap=colormap, output=tmp_path, dpi=dpi)
+        if title:
+            plot_kwargs["title"] = title
+        grid.plot(**plot_kwargs)
         with open(tmp_path, "rb") as f:
             img_bytes = f.read()
     finally:
         os.unlink(tmp_path)
 
-    b64 = base64.b64encode(img_bytes).decode("utf-8")
-    size_kb = len(img_bytes) // 1024
-    return [
-        TextContent(type="text", text=f"Grid '{grid_name}' plotted ({size_kb} KB PNG)"),
-        ImageContent(type="image", data=b64, mimeType="image/png"),
-    ]
+    # Write to caller-provided dest_path if given (local uvx transport only)
+    written_path: str | None = None
+    if dest_path:
+        os.makedirs(os.path.dirname(os.path.abspath(dest_path)), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(img_bytes)
+        written_path = os.path.abspath(dest_path)
+
+    # Detect image dimensions
+    try:
+        import struct
+        # PNG width/height are at bytes 16-24
+        w = struct.unpack(">I", img_bytes[16:20])[0]
+        h = struct.unpack(">I", img_bytes[20:24])[0]
+    except Exception:
+        w = h = 0
+
+    meta = {
+        "grid_name": grid_name,
+        "size_bytes": len(img_bytes),
+        "width": w,
+        "height": h,
+        "mime_type": "image/png",
+        "colormap": colormap,
+        "color_by": color_by,
+        "dpi": dpi,
+    }
+    if written_path:
+        meta["path"] = written_path
+
+    result: list[Any] = [TextContent(type="text", text=json.dumps(meta))]
+
+    if return_image:
+        b64 = base64.b64encode(img_bytes).decode("utf-8")
+        result.append(ImageContent(type="image", data=b64, mimeType="image/png"))
+
+    return result
 
 
 # ---------------------------------------------------------------------------
