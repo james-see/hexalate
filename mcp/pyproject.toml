@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hexalate-mcp"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server for hexalate — hexagonal tessellation tools for AI assistants"
 readme = "README.md"
 license = { text = "MIT" }

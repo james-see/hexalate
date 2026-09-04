@@ -23,6 +23,7 @@ Or connect to the hosted remote server:
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import math
 import os
@@ -31,6 +32,7 @@ from typing import Any
 
 import hexalate as hx
 from mcp.server.mcpserver import MCPServer
+from mcp.types import ImageContent, TextContent
 
 mcp = MCPServer(
     name="hexalate",
@@ -218,37 +220,34 @@ def grid_stats(grid_name: str = "default") -> str:
 
 
 @mcp.tool()
-def to_geojson(output_path: str, grid_name: str = "default") -> str:
+def to_geojson(grid_name: str = "default") -> str:
     """
-    Export a grid to a GeoJSON file.
+    Export a grid as GeoJSON and return the full JSON string.
 
     Args:
-        output_path: File path to write (e.g. "/tmp/grid.geojson").
         grid_name: Name of the grid (default: "default").
     """
     grid = _require(grid_name)
-    grid.save_geojson(output_path)
-    return f"Saved GeoJSON to {output_path} ({len(grid)} features)"
+    geojson = grid.to_geojson()
+    return json.dumps(geojson)
 
 
 @mcp.tool()
 def plot_grid(
-    output_path: str,
     grid_name: str = "default",
     colormap: str = "viridis",
     color_by: str = "none",
     dpi: int = 150,
-) -> str:
+) -> list[ImageContent | TextContent]:
     """
-    Plot a grid and save it to a file.
+    Plot a grid and return the image directly as base64-encoded PNG.
 
     Args:
-        output_path: Path to save the image (.png, .svg, .pdf).
         grid_name: Name of the grid (default: "default").
         colormap: Matplotlib colormap (e.g. viridis, plasma, coolwarm, RdYlBu).
         color_by: What to color hexes by — "none" (uniform), "distance" (from center),
                   "q" (axial q coord), "r" (axial r coord), "wave" (sin*cos pattern).
-        dpi: Resolution when saving (default 150).
+        dpi: Resolution (default 150).
     """
     grid = _require(grid_name)
 
@@ -268,11 +267,24 @@ def plot_grid(
         elif color_by == "wave":
             values = [math.sin(h.x * 0.8) * math.cos(h.y * 0.8) for h in grid]
         else:
-            raise ValueError(f"color_by must be one of: none, distance, q, r, wave")
+            raise ValueError("color_by must be one of: none, distance, q, r, wave")
 
-    grid.plot(values=values, colormap=colormap, output=output_path, dpi=dpi)
-    size_kb = os.path.getsize(output_path) // 1024
-    return f"Saved plot to {output_path} ({size_kb} KB)"
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        tmp_path = f.name
+
+    try:
+        grid.plot(values=values, colormap=colormap, output=tmp_path, dpi=dpi)
+        with open(tmp_path, "rb") as f:
+            img_bytes = f.read()
+    finally:
+        os.unlink(tmp_path)
+
+    b64 = base64.b64encode(img_bytes).decode("utf-8")
+    size_kb = len(img_bytes) // 1024
+    return [
+        TextContent(type="text", text=f"Grid '{grid_name}' plotted ({size_kb} KB PNG)"),
+        ImageContent(type="image", data=b64, mimeType="image/png"),
+    ]
 
 
 # ---------------------------------------------------------------------------
