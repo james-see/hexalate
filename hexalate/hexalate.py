@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import argparse
 import json
 import math
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-import numpy as np
-import argparse
-
 
 Orientation = Literal["pointy", "flat"]
 
@@ -19,15 +17,16 @@ Orientation = Literal["pointy", "flat"]
 # Hexagon dataclass
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Hexagon:
     """A single hexagon in a HexGrid."""
 
-    x: float          # Cartesian center x
-    y: float          # Cartesian center y
-    q: int            # axial column coordinate
-    r: int            # axial row coordinate
-    coords: list      # list of 7 (x, y) vertex tuples (closed polygon)
+    x: float  # Cartesian center x
+    y: float  # Cartesian center y
+    q: int  # axial column coordinate
+    r: int  # axial row coordinate
+    coords: list  # list of 7 (x, y) vertex tuples (closed polygon)
 
     @property
     def s(self) -> int:
@@ -50,6 +49,7 @@ class Hexagon:
 # ---------------------------------------------------------------------------
 # Vertex generation
 # ---------------------------------------------------------------------------
+
 
 def _hex_vertices(
     x_center: float,
@@ -86,6 +86,7 @@ def hexagon(
 # ---------------------------------------------------------------------------
 # HexGrid class
 # ---------------------------------------------------------------------------
+
 
 class HexGrid:
     """
@@ -180,7 +181,7 @@ class HexGrid:
     def __iter__(self):
         return iter(self._hexagons)
 
-    def get(self, q: int, r: int) -> Optional[Hexagon]:
+    def get(self, q: int, r: int) -> Hexagon | None:
         """Return the Hexagon at axial (q, r), or None if out of bounds."""
         return self._index.get((q, r))
 
@@ -207,11 +208,9 @@ class HexGrid:
         """
         try:
             import pandas as pd
-        except ImportError:
-            raise ImportError("pandas is required: pip install pandas")
-        return pd.DataFrame(
-            [{"x": h.x, "y": h.y, "q": h.q, "r": h.r} for h in self._hexagons]
-        )
+        except ImportError as error:
+            raise ImportError("pandas is required: pip install pandas") from error
+        return pd.DataFrame([{"x": h.x, "y": h.y, "q": h.q, "r": h.r} for h in self._hexagons])
 
     def to_geojson(self) -> dict:
         """Return the grid as a GeoJSON FeatureCollection dict."""
@@ -239,12 +238,12 @@ class HexGrid:
 
     def plot(
         self,
-        values: Optional[list[float]] = None,
+        values: list[float] | None = None,
         colormap: str = "viridis",
         edge_color: str = "black",
         face_color: str = "lightblue",
         figsize: tuple[float, float] = (10, 8),
-        output: Optional[str] = None,
+        output: str | None = None,
         dpi: int = 150,
     ) -> None:
         """
@@ -314,6 +313,7 @@ class HexGrid:
 # Backward-compatible module-level functions
 # ---------------------------------------------------------------------------
 
+
 def create_hexagonal_tessellation(
     width: float,
     height: float,
@@ -331,9 +331,9 @@ def create_hexagonal_tessellation(
 
 def plot_hexagonal_tessellation(
     tessellation: list[dict],
-    colormap: Optional[str] = None,
-    values: Optional[list[float]] = None,
-    output: Optional[str] = None,
+    colormap: str | None = None,
+    values: list[float] | None = None,
+    output: str | None = None,
 ) -> None:
     """
     Plot a tessellation returned by ``create_hexagonal_tessellation``.
@@ -381,17 +381,32 @@ def plot_hexagonal_tessellation(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate a hexagonal tessellation.")
-    parser.add_argument("--width",       type=float, required=True,  help="Width of the tessellation area.")
-    parser.add_argument("--height",      type=float, required=True,  help="Height of the tessellation area.")
-    parser.add_argument("--size",        type=float, required=True,  help="Circumradius of each hexagon.")
-    parser.add_argument("--orientation", choices=["pointy", "flat"], default="pointy",
-                        help="Hex orientation: pointy (default) or flat top.")
-    parser.add_argument("--colormap",    default=None,
-                        help="Matplotlib colormap for random-value coloring (e.g. viridis, plasma, coolwarm).")
-    parser.add_argument("--output",      default=None,
-                        help="Save plot to this file instead of displaying it (.png, .svg, .pdf).")
+    parser.add_argument(
+        "--width", type=float, required=True, help="Width of the tessellation area."
+    )
+    parser.add_argument(
+        "--height", type=float, required=True, help="Height of the tessellation area."
+    )
+    parser.add_argument("--size", type=float, required=True, help="Circumradius of each hexagon.")
+    parser.add_argument(
+        "--orientation",
+        choices=["pointy", "flat"],
+        default="pointy",
+        help="Hex orientation: pointy (default) or flat top.",
+    )
+    parser.add_argument(
+        "--colormap",
+        default=None,
+        help="Matplotlib colormap for random-value coloring (e.g. viridis, plasma, coolwarm).",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Save plot to this file instead of displaying it (.png, .svg, .pdf).",
+    )
     args = parser.parse_args()
 
     grid = HexGrid(args.width, args.height, args.size, args.orientation)
@@ -399,6 +414,7 @@ def main() -> None:
     values = None
     if args.colormap:
         import random
+
         values = [random.random() for _ in grid]
 
     grid.plot(

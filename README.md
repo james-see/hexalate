@@ -26,7 +26,7 @@ grid = hx.HexGrid(
     width=10,
     height=8,
     hex_size=0.5,
-    orientation="pointy",   # "pointy" (default) or "flat" top
+    orientation="pointy",  # "pointy" (default) or "flat" top
 )
 ```
 
@@ -34,14 +34,14 @@ grid = hx.HexGrid(
 
 ```python
 pointy = hx.HexGrid(10, 8, 0.5, orientation="pointy")  # ⬡ pointy top (default)
-flat   = hx.HexGrid(10, 8, 0.5, orientation="flat")    # ⬡ flat top
+flat = hx.HexGrid(10, 8, 0.5, orientation="flat")  # ⬡ flat top
 ```
 
 ### Iterating and accessing hexagons
 
 ```python
 for h in grid:
-    print(h.x, h.y, h.q, h.r)   # Cartesian center + axial coords
+    print(h.x, h.y, h.q, h.r)  # Cartesian center + axial coords
 
 # Access by axial coordinates
 h = grid.get(q=0, r=0)
@@ -63,9 +63,9 @@ Each `Hexagon` dataclass exposes:
 
 ```python
 h = grid.get(2, 3)
-print(h.s)                       # cube coordinate
+print(h.s)  # cube coordinate
 print(h.distance_to(grid.get(0, 0)))  # hex distance
-print(h.neighbor_coords())       # list of (q, r) neighbor positions
+print(h.neighbor_coords())  # list of (q, r) neighbor positions
 ```
 
 ### Plotting
@@ -76,6 +76,7 @@ grid.plot()
 
 # With a colormap driven by per-hex values
 import random
+
 values = [random.random() for _ in grid]
 grid.plot(values=values, colormap="plasma")
 
@@ -95,7 +96,7 @@ df = grid.to_dataframe()
 # columns: x, y, q, r
 
 # GeoJSON
-geojson = grid.to_geojson()   # dict
+geojson = grid.to_geojson()  # dict
 grid.save_geojson("grid.geojson")
 
 # Backward-compatible list of dicts
@@ -113,6 +114,7 @@ hx.plot_hexagonal_tessellation(tessellation)
 
 # With colormap
 import random
+
 values = [random.random() for _ in tessellation]
 hx.plot_hexagonal_tessellation(tessellation, colormap="coolwarm", values=values)
 
@@ -123,7 +125,7 @@ hx.plot_hexagonal_tessellation(tessellation, output="grid.png")
 ## Single hexagon
 
 ```python
-vertices = hx.hexagon(x_center=0.0, y_center=0.0, size=1.0)              # pointy
+vertices = hx.hexagon(x_center=0.0, y_center=0.0, size=1.0)  # pointy
 vertices = hx.hexagon(x_center=0.0, y_center=0.0, size=1.0, orientation="flat")
 ```
 

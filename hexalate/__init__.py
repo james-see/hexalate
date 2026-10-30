@@ -2,8 +2,8 @@ from hexalate.hexalate import (
     Hexagon,
     HexGrid,
     Orientation,
-    hexagon,
     create_hexagonal_tessellation,
+    hexagon,
     plot_hexagonal_tessellation,
 )
 
